@@ -1,9 +1,8 @@
-name: Deploy Python Lambda (Code Only)
+name: Deploy Python Lambda (Docker Build)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -12,10 +11,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Zip only lambda_function
-        # ライブラリのインストール工程をすべて削除し、
-        # lambda_function.py だけをZIPに固めます
-        run: zip deployment_package.zip lambda_function.py
+      - name: Build dependencies in Lambda-like Docker container
+        run: |
+          # Lambdaと同じ環境(Python 3.12)のコンテナを立ち上げて、その中でpip installする
+          docker run --rm -v $(pwd):/var/task public.ecr.aws/sam/build-python3.12:latest \
+            pip install -r requirements.txt -t /var/task/package
+
+      - name: Zip package and code
+        run: |
+          cd package
+          zip -r ../deployment_package.zip .
+          cd ..
+          zip deployment_package.zip lambda_function.py
 
       - name: Deploy to AWS Lambda
         uses: appleboy/lambda-action@master
