@@ -17,7 +17,7 @@ def lambda_handler(event, context):
         return f"【仮登録完了】{date} {time}に「{title}」を予約しました"
 
     model = genai.GenerativeModel(
-        model_name='models/gemini-1.5-flash', # 'models/' を追加
+        model_name='gemini-1.5-pro', # flash から pro に変更
         tools=[add_calendar_event]
     )
 
