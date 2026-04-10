@@ -1,9 +1,9 @@
-name: Deploy Python Lambda
+name: Deploy Python Lambda (Code Only)
 
 on:
   push:
     branches:
-      - main # mainブランチにプッシュされた時のみ作動
+      - main
 
 jobs:
   deploy:
@@ -12,36 +12,16 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12' # AWS Lambdaの設定に合わせる（3.11等でも可）
-
-      - name: Install dependencies and Zip
-        run: |
-          mkdir package
-          # 1. 依存関係のインストール（キャッシュを無視し、バイナリを強制指定）
-          python -m pip install \
-            --no-cache-dir \
-            --platform manylinux2014_x86_64 \
-            --target package \
-            --implementation cp \
-            --python-version 3.12 \
-            --only-binary=:all: \
-            --upgrade \
-            google-generativeai line-bot-sdk grpcio==1.60.0
-
-          # 2. パッケージ化
-          cd package
-          zip -r ../deployment_package.zip .
-          cd ..
-          zip deployment_package.zip lambda_function.py
+      - name: Zip only lambda_function
+        # ライブラリのインストール工程をすべて削除し、
+        # lambda_function.py だけをZIPに固めます
+        run: zip deployment_package.zip lambda_function.py
 
       - name: Deploy to AWS Lambda
         uses: appleboy/lambda-action@master
         with:
           aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: ap-northeast-1 # 東京リージョン
-          function_name: my-secretary-bot # ★AWS Lambda上の実際の関数名に変更してください
+          aws_region: ap-northeast-1
+          function_name: my-secretary-bot
           zip_file: deployment_package.zip
