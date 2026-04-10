@@ -18,7 +18,7 @@ def lambda_handler(event, context):
 
     model = genai.GenerativeModel(
         model_name='gemini-1.5-pro', # flash から pro に変更
-        tools=[add_calendar_event]
+#        tools=[add_calendar_event]
     )
 
     # 3. Geminiで推論実行
