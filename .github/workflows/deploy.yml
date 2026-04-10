@@ -11,9 +11,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Build dependencies in Lambda-like Docker container
+      - name: Build dependencies in Lambda Docker container
+        # AWS公式のLambdaビルド用イメージを使って、その中でpip installを実行します
         run: |
-          # Lambdaと同じ環境(Python 3.12)のコンテナを立ち上げて、その中でpip installする
+          mkdir -p package
           docker run --rm -v $(pwd):/var/task public.ecr.aws/sam/build-python3.12:latest \
             pip install -r requirements.txt -t /var/task/package
 
