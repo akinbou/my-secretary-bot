@@ -15,7 +15,7 @@ def lambda_handler(event, context):
 
     # 3. Gemini API 直接呼び出し (v1 エンドポイントを使用)
     # ここを v1 に固定することで 404 を物理的に回避します
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={api_key}"
     
     payload = {
         "contents": [{
