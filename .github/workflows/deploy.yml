@@ -1,0 +1,40 @@
+name: Deploy Python Lambda
+
+on:
+  push:
+    branches:
+      - main # mainブランチにプッシュされた時のみ作動
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12' # AWS Lambdaの設定に合わせる（3.11等でも可）
+
+      - name: Install dependencies and Zip
+        run: |
+          # 1. パッケージ用の空フォルダを作成
+          mkdir package
+          # 2. requirements.txtの中身をpackageフォルダにインストール
+          pip install -r requirements.txt -t package/
+          # 3. パッケージの中身をzip化
+          cd package
+          zip -r ../deployment_package.zip .
+          cd ..
+          # 4. 自身のコード(lambda_function.py)を同じzipに追加
+          zip deployment_package.zip lambda_function.py
+
+      - name: Deploy to AWS Lambda
+        uses: appleboy/lambda-action@master
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: ap-northeast-1 # 東京リージョン
+          function_name: my-secretary-bot # ★AWS Lambda上の実際の関数名に変更してください
+          zip_file: deployment_package.zip

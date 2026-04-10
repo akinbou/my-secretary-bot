@@ -1,0 +1,2 @@
+google-generativeai
+line-bot-sdk
