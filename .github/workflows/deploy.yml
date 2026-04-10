@@ -19,15 +19,23 @@ jobs:
 
       - name: Install dependencies and Zip
         run: |
-          # 1. パッケージ用の空フォルダを作成
+          # 1. パッケージ用のフォルダを作成
           mkdir package
-          # 2. requirements.txtの中身をpackageフォルダにインストール
-          pip install -r requirements.txt -t package/
+          # 2. --platform を指定して Linux 用のバイナリを強制的にインストールする
+          pip install \
+            --platform manylinux2014_x86_64 \
+            --target=package \
+            --implementation cp \
+            --python-version 3.12 \
+            --only-binary=:all: \
+            --upgrade \
+            -r requirements.txt
+          
           # 3. パッケージの中身をzip化
           cd package
           zip -r ../deployment_package.zip .
           cd ..
-          # 4. 自身のコード(lambda_function.py)を同じzipに追加
+          # 4. 自身のコードをzipに追加
           zip deployment_package.zip lambda_function.py
 
       - name: Deploy to AWS Lambda
