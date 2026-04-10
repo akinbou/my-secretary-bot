@@ -20,8 +20,9 @@ jobs:
       - name: Install dependencies and Zip
         run: |
           mkdir package
-          # 1. 依存関係のインストール（Linux x86_64 用のバイナリを確実に取得）
+          # 1. 依存関係のインストール（キャッシュを無視し、バイナリを強制指定）
           python -m pip install \
+            --no-cache-dir \
             --platform manylinux2014_x86_64 \
             --target package \
             --implementation cp \
@@ -30,7 +31,7 @@ jobs:
             --upgrade \
             google-generativeai line-bot-sdk grpcio==1.60.0
 
-          # 2. パッケージとコードを一つのzipにまとめる
+          # 2. パッケージ化
           cd package
           zip -r ../deployment_package.zip .
           cd ..
