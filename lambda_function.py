@@ -3,47 +3,60 @@ import os
 import urllib.request
 
 def lambda_handler(event, context):
-    # 1. 環境変数からAPIキーを取得
-    api_key = os.environ.get("GEMINI_API_KEY")
+    # 1. 環境変数の取得
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+    LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
     
-    # 2. LINEからのメッセージを取得（テスト時のエラー回避用）
+    # 2. LINEからのイベント解析
     try:
         body = json.loads(event.get('body', '{}'))
-        user_message = body['events'][0]['message']['text']
-    except:
-        user_message = "こんにちは" # テスト用
+        event_data = body['events'][0]
+        reply_token = event_data['replyToken']
+        user_message = event_data['message']['text']
+    except Exception as e:
+        print(f"解析エラー: {e}")
+        return {'statusCode': 200} # テスト時などはここで終了
 
-    # 3. Gemini API 直接呼び出し (v1 エンドポイントを使用)
-    # ここを v1 に固定することで 404 を物理的に回避します
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={api_key}"
-    
-    payload = {
-        "contents": [{
-            "parts": [{"text": user_message}]
-        }]
+    # 3. Gemini API 呼び出し (v1 / gemini-2.5-flash)
+    gemini_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+    gemini_payload = {
+        "contents": [{"parts": [{"text": user_message}]}]
     }
     
-    headers = {'Content-Type': 'application/json'}
-    
     try:
-        # リクエスト送信
-        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
-        with urllib.request.urlopen(req) as res:
-            response_body = res.read().decode('utf-8')
-            result = json.loads(response_body)
-            # Gemini の返答を抽出
-            gemini_text = result['candidates'][0]['content']['parts'][0]['text']
+        # Geminiへ送信
+        gemini_req = urllib.request.Request(
+            gemini_url, 
+            data=json.dumps(gemini_payload).encode('utf-8'), 
+            headers={'Content-Type': 'application/json'}, 
+            method='POST'
+        )
+        with urllib.request.urlopen(gemini_req) as res:
+            gemini_res = json.loads(res.read().decode('utf-8'))
+            gemini_text = gemini_res['candidates'][0]['content']['parts'][0]['text']
             
-            print(f"Geminiの回答: {gemini_text}")
-            
-            return {
-                'statusCode': 200,
-                'body': json.dumps({'message': gemini_text})
-            }
-            
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)})
+        # 4. LINE Messaging API で返信
+        line_url = "https://api.line.me/v2/bot/message/reply"
+        line_payload = {
+            "replyToken": reply_token,
+            "messages": [{"type": "text", "text": gemini_text}]
         }
+        line_headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}"
+        }
+        
+        line_req = urllib.request.Request(
+            line_url, 
+            data=json.dumps(line_payload).encode('utf-8'), 
+            headers=line_headers, 
+            method='POST'
+        )
+        with urllib.request.urlopen(line_req) as res:
+            print("LINE返信成功")
+
+        return {'statusCode': 200, 'body': json.dumps('success')}
+
+    except Exception as e:
+        print(f"エラー発生: {e}")
+        return {'statusCode': 500, 'body': json.dumps(str(e))}
