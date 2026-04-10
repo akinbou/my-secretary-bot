@@ -19,23 +19,21 @@ jobs:
 
       - name: Install dependencies and Zip
         run: |
-          # 1. パッケージ用のフォルダを作成
           mkdir package
-          # 2. --platform を指定して Linux 用のバイナリを強制的にインストールする
-          pip install \
+          # 1. 依存関係のインストール（Linux x86_64 用のバイナリを確実に取得）
+          python -m pip install \
             --platform manylinux2014_x86_64 \
-            --target=package \
+            --target package \
             --implementation cp \
             --python-version 3.12 \
             --only-binary=:all: \
             --upgrade \
-            -r requirements.txt
-          
-          # 3. パッケージの中身をzip化
+            google-generativeai line-bot-sdk grpcio==1.60.0
+
+          # 2. パッケージとコードを一つのzipにまとめる
           cd package
           zip -r ../deployment_package.zip .
           cd ..
-          # 4. 自身のコードをzipに追加
           zip deployment_package.zip lambda_function.py
 
       - name: Deploy to AWS Lambda
