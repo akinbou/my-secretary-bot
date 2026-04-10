@@ -3,7 +3,7 @@ import json
 import google.generativeai as genai
 
 # 環境変数からキーを取得
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+genai.configure(api_key=os.environ["GEMINI_API_KEY"], transport='rest')
 
 def lambda_handler(event, context):
     # 1. LINEからのメッセージを取得
