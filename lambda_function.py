@@ -18,7 +18,7 @@ def lambda_handler(event, context):
         return {'statusCode': 200} # テスト時などはここで終了
 
     # 3. Gemini API 呼び出し (v1 / gemini-2.5-flash)
-    gemini_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+    gemini_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent?key={GEMINI_API_KEY}"
     gemini_payload = {
         "contents": [{"parts": [{"text": user_message}]}]
     }
